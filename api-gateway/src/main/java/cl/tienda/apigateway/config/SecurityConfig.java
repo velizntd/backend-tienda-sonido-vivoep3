@@ -61,7 +61,10 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.GET,
                                 "/api/productos/**",
                                 "/api/categorias/**",
-                                "/api/novedades/**",
+                                "/api/novedades/**")
+                        .hasAnyRole("cliente", "vendedor", "administrador")
+
+                        .pathMatchers(HttpMethod.GET,
                                 "/api/blogs/**")
                         .permitAll()
 
@@ -75,9 +78,25 @@ public class SecurityConfig {
                                 "/api/contactos/**")
                         .hasRole("administrador")
 
-                        .pathMatchers("/api/carrito/**",
-                                "/api/pedidos/**",
-                                "/api/auth/me")
+                        .pathMatchers("/api/carrito", "/api/carrito/**")
+                        .hasRole("cliente")
+
+                        .pathMatchers(HttpMethod.POST, "/api/pedidos")
+                        .hasRole("cliente")
+
+                        .pathMatchers(HttpMethod.GET, "/api/pedidos/mis-pedidos")
+                        .hasRole("cliente")
+
+                        .pathMatchers(HttpMethod.GET, "/api/pedidos")
+                        .hasAnyRole("vendedor", "administrador")
+
+                        .pathMatchers(HttpMethod.PATCH, "/api/pedidos/*/estado")
+                        .hasAnyRole("vendedor", "administrador")
+
+                        .pathMatchers(HttpMethod.GET, "/api/pedidos/*")
+                        .hasAnyRole("cliente", "vendedor", "administrador")
+
+                        .pathMatchers("/api/auth/me")
                         .authenticated()
 
                         .anyExchange().denyAll()
@@ -115,7 +134,9 @@ public class SecurityConfig {
         config.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of(
-                "Authorization", "Content-Type"));
+                "Authorization",
+                "Content-Type",
+                "X-CSRF-Protection"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =

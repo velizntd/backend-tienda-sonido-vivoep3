@@ -44,8 +44,10 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**",
                     "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.GET,
-                    "/api/novedades/**").permitAll()
-                .requestMatchers("/api/novedades/**").hasRole("administrador")
+                    "/api/novedades/**")
+                    .hasAnyRole("cliente", "vendedor", "administrador")
+                .requestMatchers("/api/novedades/**")
+                    .hasRole("administrador")
                 .anyRequest().denyAll())
             .oauth2ResourceServer(oauth -> oauth
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(converter)))
@@ -69,3 +71,4 @@ public class SecurityConfig {
         return decoder;
     }
 }
+

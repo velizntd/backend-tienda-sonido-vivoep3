@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -109,6 +110,32 @@ class UsuarioServiceTest {
         assertThatThrownBy(() -> usuarioService.crear(datos("12345678-5", "camila@correo.cl", "cliente", "123")))
                 .isInstanceOf(DatosInvalidosException.class);
         verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void crearConFechaDeNacimientoFuturaLanzaDatosInvalidos() {
+        when(usuarioRepository.existsByRut("123456785")).thenReturn(false);
+        when(usuarioRepository.existsByCorreo("camila@correo.cl")).thenReturn(false);
+        UsuarioRequest futura = new UsuarioRequest("12345678-5", "Camila", "Rojas Soto", "camila@correo.cl",
+                LocalDate.now().plusDays(1).toString(), "Región de Valparaíso", "Viña del Mar",
+                "Avenida Libertad 123", "cliente", "clave123");
+
+        assertThatThrownBy(() -> usuarioService.crear(futura))
+                .isInstanceOf(DatosInvalidosException.class)
+                .hasMessageContaining("futura");
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void crearConFechaAnteriorA1900LanzaDatosInvalidos() {
+        when(usuarioRepository.existsByRut("123456785")).thenReturn(false);
+        when(usuarioRepository.existsByCorreo("camila@correo.cl")).thenReturn(false);
+        UsuarioRequest antigua = new UsuarioRequest("12345678-5", "Camila", "Rojas Soto", "camila@correo.cl",
+                "1313-03-31", "Región de Valparaíso", "Viña del Mar", "Avenida Libertad 123", "cliente", "clave123");
+
+        assertThatThrownBy(() -> usuarioService.crear(antigua))
+                .isInstanceOf(DatosInvalidosException.class)
+                .hasMessageContaining("1900");
     }
 
     @Test

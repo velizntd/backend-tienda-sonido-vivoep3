@@ -156,6 +156,9 @@ public class UsuarioService {
             if (convertida.isAfter(LocalDate.now())) {
                 throw new DatosInvalidosException("La fecha de nacimiento no puede ser futura.");
             }
+            if (convertida.getYear() < 1900) {
+                throw new DatosInvalidosException("La fecha de nacimiento debe ser desde el año 1900.");
+            }
             return convertida;
         } catch (DateTimeParseException error) {
             throw new DatosInvalidosException("La fecha de nacimiento no es válida. Usa el formato yyyy-MM-dd.");

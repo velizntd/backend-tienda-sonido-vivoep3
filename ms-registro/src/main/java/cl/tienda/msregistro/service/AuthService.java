@@ -13,8 +13,11 @@ import cl.tienda.msregistro.dto.LoginRequest;
 import cl.tienda.msregistro.dto.LoginResponse;
 import cl.tienda.msregistro.dto.RegistroRequest;
 import cl.tienda.msregistro.dto.RegistroResponse;
+import cl.tienda.msregistro.dto.UsuarioResponse;
+
 import cl.tienda.msregistro.exception.CredencialesInvalidasException;
 import cl.tienda.msregistro.exception.DuplicadoException;
+
 import cl.tienda.msregistro.model.Usuario;
 import cl.tienda.msregistro.repository.UsuarioRepository;
 
@@ -68,6 +71,7 @@ public class AuthService {
 
         usuario.setRol("cliente");
         usuario.setActivo(true);
+
         usuario.setFechaRegistro(
                 LocalDateTime.now(ZoneOffset.UTC));
 
@@ -116,5 +120,31 @@ public class AuthService {
                 900,
                 usuario.getId(),
                 usuario.getRol());
+    }
+
+    @Transactional(readOnly = true)
+    public UsuarioResponse obtenerUsuarioActual(String usuarioId) {
+
+        Usuario usuario = usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(CredencialesInvalidasException::new);
+
+        if (!usuario.isActivo()) {
+            throw new CredencialesInvalidasException();
+        }
+
+        return new UsuarioResponse(
+                usuario.getId(),
+                usuario.getRut(),
+                usuario.getNombre(),
+                usuario.getApellidos(),
+                usuario.getCorreo(),
+                usuario.getFechaNacimiento(),
+                usuario.getRegion(),
+                usuario.getComuna(),
+                usuario.getDireccion(),
+                usuario.getRol(),
+                usuario.isActivo(),
+                usuario.getFechaRegistro());
     }
 }

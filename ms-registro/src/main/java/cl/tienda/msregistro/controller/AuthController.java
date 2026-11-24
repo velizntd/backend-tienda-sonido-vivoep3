@@ -2,6 +2,7 @@ package cl.tienda.msregistro.controller;
 
 import jakarta.validation.Valid;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -22,16 +23,27 @@ import cl.tienda.msregistro.dto.RegistroResponse;
 import cl.tienda.msregistro.dto.UsuarioResponse;
 
 import cl.tienda.msregistro.service.AuthService;
+import cl.tienda.msregistro.service.RefreshTokenService;
+import cl.tienda.msregistro.service.RefreshCookieService;
 
 @RestController
 @RequestMapping("/api/auth")
-@Tag(name = "Autenticacion", description = "Registro y acceso de usuarios")
+@Tag(name = "Autenticacion",
+     description = "Registro y acceso de usuarios")
 public class AuthController {
 
     private final AuthService authService;
+    private final RefreshTokenService refreshTokenService;
+    private final RefreshCookieService refreshCookieService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(
+            AuthService authService,
+            RefreshTokenService refreshTokenService,
+            RefreshCookieService refreshCookieService) {
+
         this.authService = authService;
+        this.refreshTokenService = refreshTokenService;
+        this.refreshCookieService = refreshCookieService;
     }
 
     @Operation(summary = "Registrar un nuevo cliente")
@@ -56,12 +68,26 @@ public class AuthController {
     @ApiResponse(responseCode = "401", description = "Credenciales incorrectas")
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> iniciarSesion(
-            @Valid @RequestBody LoginRequest request) {
+            @Valid @RequestBody LoginRequest request,
+            @CookieValue(name = "refresh_token", required = false)
+            String tokenAnterior) {
 
         LoginResponse respuesta =
                 authService.iniciarSesion(request);
 
-        return ResponseEntity.ok(respuesta);
+        refreshTokenService.revocarToken(tokenAnterior);
+
+        String refreshToken =
+                refreshTokenService.generarToken(
+                        respuesta.usuarioId());
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.SET_COOKIE,
+                        refreshCookieService
+                                .crearCookie(refreshToken)
+                                .toString())
+                .body(respuesta);
     }
 
     @Operation(summary = "Obtener usuario autenticado")
@@ -76,5 +102,43 @@ public class AuthController {
                 authService.obtenerUsuarioActual(jwt.getSubject());
 
         return ResponseEntity.ok(respuesta);
+    }
+
+    @Operation(summary = "Renovar la sesion del usuario")
+    @ApiResponse(responseCode = "200", description = "Sesion renovada")
+    @ApiResponse(responseCode = "401", description = "Sesion invalida o expirada")
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponse> renovarSesion(
+            @CookieValue(name = "refresh_token", required = false)
+            String refreshToken) {
+
+        RefreshTokenService.SesionRenovada sesion =
+                refreshTokenService.renovarToken(refreshToken);
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.SET_COOKIE,
+                        refreshCookieService
+                                .crearCookie(sesion.refreshToken())
+                                .toString())
+                .body(sesion.respuesta());
+    }
+
+    @Operation(summary = "Cerrar sesion del usuario")
+    @ApiResponse(responseCode = "204", description = "Sesion cerrada")
+    @PostMapping("/logout")
+    public ResponseEntity<Void> cerrarSesion(
+            @CookieValue(name = "refresh_token", required = false)
+            String refreshToken) {
+
+        refreshTokenService.revocarToken(refreshToken);
+
+        return ResponseEntity.noContent()
+                .header(
+                        HttpHeaders.SET_COOKIE,
+                        refreshCookieService
+                                .eliminarCookie()
+                                .toString())
+                .build();
     }
 }

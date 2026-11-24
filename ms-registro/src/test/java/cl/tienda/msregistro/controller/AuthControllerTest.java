@@ -4,37 +4,49 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
+
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import cl.tienda.msregistro.dto.LoginRequest;
-import cl.tienda.msregistro.dto.LoginResponse;
-import cl.tienda.msregistro.dto.RegistroRequest;
-import cl.tienda.msregistro.dto.RegistroResponse;
+import jakarta.servlet.http.Cookie;
 
-import cl.tienda.msregistro.exception.CredencialesInvalidasException;
-import cl.tienda.msregistro.exception.DuplicadoException;
-import cl.tienda.msregistro.exception.GlobalExceptionHandler;
-
-import cl.tienda.msregistro.service.AuthService;
+import cl.tienda.msregistro.dto.*;
+import cl.tienda.msregistro.exception.*;
+import cl.tienda.msregistro.service.*;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.containsString;
 
 class AuthControllerTest {
 
     private MockMvc mockMvc;
     private AuthService authService;
+    private RefreshTokenService refreshTokenService;
 
     @BeforeEach
     void configurar() {
 
         authService = mock(AuthService.class);
 
+        refreshTokenService =
+                mock(RefreshTokenService.class);
+
+        RefreshCookieService refreshCookieService =
+                new RefreshCookieService(false);
+
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new AuthController(authService))
-                .setControllerAdvice(new GlobalExceptionHandler())
+
+                .standaloneSetup(new AuthController(
+                        authService,
+                        refreshTokenService,
+                        refreshCookieService))
+
+                .setControllerAdvice(
+                        new GlobalExceptionHandler())
+
                 .build();
     }
 
@@ -65,6 +77,16 @@ class AuthControllerTest {
                 """;
     }
 
+    private LoginResponse respuestaLogin() {
+
+        return new LoginResponse(
+                "jwt-prueba",
+                "Bearer",
+                900,
+                "USR-001",
+                "cliente");
+    }
+
     @Test
     void debeRegistrarUsuarioYRetornar201() throws Exception {
 
@@ -90,12 +112,10 @@ class AuthControllerTest {
     void debeIniciarSesionYRetornar200() throws Exception {
 
         when(authService.iniciarSesion(any(LoginRequest.class)))
-                .thenReturn(new LoginResponse(
-                        "jwt-prueba",
-                        "Bearer",
-                        900,
-                        "USR-001",
-                        "cliente"));
+                .thenReturn(respuestaLogin());
+
+        when(refreshTokenService.generarToken("USR-001"))
+                .thenReturn("refresh-prueba");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -104,11 +124,21 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("jwt-prueba"))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.rol").value("cliente"));
+                .andExpect(jsonPath("$.rol").value("cliente"))
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+
+                .andExpect(header().string(
+                        HttpHeaders.SET_COOKIE,
+                        containsString("refresh_token=refresh-prueba")))
+
+                .andExpect(header().string(
+                        HttpHeaders.SET_COOKIE,
+                        containsString("HttpOnly")));
     }
 
     @Test
-    void debeRechazarCredencialesInvalidasCon401() throws Exception {
+    void debeRechazarCredencialesInvalidasCon401()
+            throws Exception {
 
         when(authService.iniciarSesion(any(LoginRequest.class)))
                 .thenThrow(new CredencialesInvalidasException());
@@ -123,7 +153,8 @@ class AuthControllerTest {
     }
 
     @Test
-    void debeRechazarUsuarioDuplicadoCon409() throws Exception {
+    void debeRechazarUsuarioDuplicadoCon409()
+            throws Exception {
 
         when(authService.registrar(any(RegistroRequest.class)))
                 .thenThrow(new DuplicadoException(
@@ -139,7 +170,8 @@ class AuthControllerTest {
     }
 
     @Test
-    void debeRechazarCamposInvalidosCon400() throws Exception {
+    void debeRechazarCamposInvalidosCon400()
+            throws Exception {
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -156,7 +188,8 @@ class AuthControllerTest {
     }
 
     @Test
-    void debeRechazarJsonIncorrectoCon400() throws Exception {
+    void debeRechazarJsonIncorrectoCon400()
+            throws Exception {
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -165,5 +198,73 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(authService);
+    }
+
+    @Test
+    void debeRenovarSesionCorrectamente()
+            throws Exception {
+
+        when(refreshTokenService.renovarToken("refresh-anterior"))
+                .thenReturn(
+                        new RefreshTokenService.SesionRenovada(
+                                respuestaLogin(),
+                                "refresh-nuevo"));
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new Cookie(
+                                "refresh_token",
+                                "refresh-anterior")))
+
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("jwt-prueba"))
+
+                .andExpect(header().string(
+                        HttpHeaders.SET_COOKIE,
+                        containsString("refresh_token=refresh-nuevo")));
+    }
+
+    @Test
+    void debeRechazarRefreshInvalido()
+            throws Exception {
+
+        when(refreshTokenService.renovarToken("token-invalido"))
+                .thenThrow(new CredencialesInvalidasException());
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new Cookie(
+                                "refresh_token",
+                                "token-invalido")))
+
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void debeRechazarRefreshSinCookie()
+            throws Exception {
+
+        when(refreshTokenService.renovarToken(null))
+                .thenThrow(new CredencialesInvalidasException());
+
+        mockMvc.perform(post("/api/auth/refresh"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void debeCerrarSesionCorrectamente()
+            throws Exception {
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(new Cookie(
+                                "refresh_token",
+                                "refresh-prueba")))
+
+                .andExpect(status().isNoContent())
+
+                .andExpect(header().string(
+                        HttpHeaders.SET_COOKIE,
+                        containsString("Max-Age=0")));
+
+        verify(refreshTokenService)
+                .revocarToken("refresh-prueba");
     }
 }

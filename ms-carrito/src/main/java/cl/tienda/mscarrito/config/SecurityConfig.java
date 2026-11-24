@@ -7,9 +7,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.server.resource.authentication.*;
@@ -20,8 +22,8 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
-            throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http) throws Exception {
 
         JwtGrantedAuthoritiesConverter roles =
                 new JwtGrantedAuthoritiesConverter();
@@ -35,39 +37,92 @@ public class SecurityConfig {
         converter.setJwtGrantedAuthoritiesConverter(roles);
 
         return http
-            .csrf(csrf -> csrf.disable())
-            .httpBasic(basic -> basic.disable())
-            .formLogin(form -> form.disable())
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/swagger-ui/**",
-                    "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-                .requestMatchers("/api/carrito/**").hasRole("cliente")
-                .requestMatchers(HttpMethod.POST,
-                    "/api/pedidos").hasRole("cliente")
-                .requestMatchers(HttpMethod.GET,
-                    "/api/pedidos/mis-pedidos").hasRole("cliente")
-                .requestMatchers("/api/pedidos/**").hasRole("administrador")
-                .anyRequest().denyAll())
-            .oauth2ResourceServer(oauth -> oauth
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(converter)))
-            .build();
+
+                .csrf(csrf -> csrf.disable())
+
+                .httpBasic(basic -> basic.disable())
+
+                .formLogin(form -> form.disable())
+
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS))
+
+                .authorizeHttpRequests(auth -> auth
+
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                "/api/carrito",
+                                "/api/carrito/**"
+                        ).hasRole("cliente")
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/pedidos"
+                        ).hasRole("cliente")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/pedidos/mis-pedidos"
+                        ).hasRole("cliente")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/pedidos"
+                        ).hasAnyRole(
+                                "administrador",
+                                "vendedor")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/pedidos/*"
+                        ).hasAnyRole(
+                                "administrador",
+                                "vendedor",
+                                "cliente")
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/pedidos/*/estado"
+                        ).hasAnyRole(
+                                "administrador",
+                                "vendedor")
+
+                        .anyRequest().denyAll()
+
+                )
+
+                .oauth2ResourceServer(oauth -> oauth
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(converter)))
+
+                .build();
     }
 
     @Bean
     public JwtDecoder jwtDecoder(
             @Value("${app.jwt.secret}") String secret) {
 
-        byte[] key = Base64.getDecoder().decode(secret);
+        byte[] key =
+                Base64.getDecoder().decode(secret);
 
-        NimbusJwtDecoder decoder = NimbusJwtDecoder
-            .withSecretKey(new SecretKeySpec(key, "HmacSHA256"))
-            .macAlgorithm(MacAlgorithm.HS256)
-            .build();
+        NimbusJwtDecoder decoder =
+                NimbusJwtDecoder
+                        .withSecretKey(
+                                new SecretKeySpec(
+                                        key,
+                                        "HmacSHA256"))
+                        .macAlgorithm(MacAlgorithm.HS256)
+                        .build();
 
         decoder.setJwtValidator(
-            JwtValidators.createDefaultWithIssuer("sonidovivo"));
+                JwtValidators.createDefaultWithIssuer(
+                        "sonidovivo"));
 
         return decoder;
     }

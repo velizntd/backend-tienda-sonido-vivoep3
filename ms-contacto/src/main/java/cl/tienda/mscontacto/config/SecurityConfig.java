@@ -44,7 +44,7 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**",
                     "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.POST,
-                    "/api/contactos").permitAll()
+                    "/api/contactos").authenticated()
                 .requestMatchers("/api/contactos/**").hasRole("administrador")
                 .anyRequest().denyAll())
             .oauth2ResourceServer(oauth -> oauth

@@ -139,7 +139,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\iniciar-backend.ps1
 
 Si la variable no está definida, ms-usuarios no crea la cuenta y lo avisa en su consola.
 
-ms-usuarios debe iniciar antes que ms-registro y ms-carrito, porque refresh_tokens, carritos y pedidos tienen claves foráneas hacia usuarios.
+ms-usuarios debe iniciar antes que ms-registro y ms-carrito, porque sus migraciones Flyway crean la tabla usuarios y refresh_tokens, carritos y pedidos tienen claves foráneas hacia ella. Si ms-registro o ms-carrito parten primero, sus migraciones fallan.
 
 ## Ejecutar el backend
 
@@ -309,6 +309,10 @@ Las pruebas de integración pueden requerir MySQL y las variables
 de entorno. Cada integrante debe implementar pruebas de sus
 funcionalidades.
 
+Los servicios con JaCoCo (ms-productos, ms-novedades, ms-usuarios,
+ms-contacto y ms-blogs) generan el reporte de cobertura al ejecutar
+`.\mvnw.cmd test`, en `target/site/jacoco/index.html`.
+
 ## Ramas Git
 
 - main: versión entregada.
@@ -336,16 +340,26 @@ Validado el 24 de noviembre de 2026:
 - Scripts PowerShell sin errores de sintaxis.
 - Script de verificación ejecutado correctamente.
 
+## Estado de funcionalidades
+
+Actualizado el 24 de noviembre de 2026:
+
+| Servicio | Estado |
+|---|---|
+| ms-usuarios | CRUD de usuarios, roles, estado, administrador inicial, Swagger y pruebas. Integrado en evaluacion-3. |
+| ms-contacto | Envío de mensajes y consulta para administrador, Swagger y pruebas. Integrado en evaluacion-3. |
+| ms-blogs | CRUD de artículos con secciones, Swagger y pruebas. Integrado en evaluacion-3. |
+| ms-productos | CRUD de productos y categorías, Swagger y pruebas. Integrado en evaluacion-3. |
+| ms-novedades | Controlador, servicio y migraciones. Integrado en evaluacion-3. |
+| ms-registro | Registro, login, refresh con rotación, cookies HttpOnly con CSRF y logout. En feature/sebastian-registro-carrito, pendiente de PR. |
+| ms-carrito | Migraciones, entidades y repositorios listos. Endpoints en desarrollo. |
+
 ## Funcionalidades pendientes
 
-- Entidades y migraciones de negocio.
-- Repositorios, servicios y controladores.
-- Operaciones CRUD.
-- Login y registro reales.
-- Generación y renovación de JWT.
-- Autorización por roles y propiedad de recursos.
-- Integración con React.
-- Pruebas unitarias y de integración.
+- Endpoints de carrito, pedidos y checkout en ms-carrito.
+- Descuento interno de stock con X-Internal-Service-Key.
+- Integración React de carrito, checkout, historial y administración de pedidos.
+- Indicadores de AdminInicio conectados a las API.
 - Evidencias y documentación final.
 
 ## Equipo

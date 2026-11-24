@@ -1,96 +1,340 @@
-# Sonido Vivo · Backend
+﻿# Sonido Vivo - Backend
 
-Backend de **Sonido Vivo**, tienda de instrumentos y equipos musicales. Evaluación Parcial 3 de DSY1104 Desarrollo Fullstack II, Duoc UC.
+Evaluación Parcial 3 - DSY1104 Desarrollo Fullstack II - Duoc UC.
 
-Frontend (React): https://github.com/dzzetafps/tienda-sonido-vivo
+Backend de Sonido Vivo, tienda de instrumentos y equipos musicales,
+implementado mediante una arquitectura de microservicios.
+
+## Repositorios
+
+- Frontend: https://github.com/dzzetafps/tienda-sonido-vivo
+- Backend: https://github.com/velizntd/backend-tienda-sonido-vivoep3
+
+## Tecnologías
+
+- Java 21 LTS.
+- Spring Boot 4.0.10.
+- Spring Cloud 2025.1.5.
+- Maven Wrapper.
+- Spring Web MVC.
+- Spring Data JPA.
+- Spring Security.
+- OAuth2 Resource Server.
+- JWT HS256.
+- BCrypt.
+- MySQL 8.
+- Flyway.
+- Swagger / Springdoc 3.0.0.
+- Eureka Server.
+- Reactive API Gateway.
+- React y Vite.
 
 ## Arquitectura
 
 ```text
-Frontend React (5173)
-        │  todas las peticiones van a http://localhost:8080/api/...
-        ▼
-api-gateway (8080) ──consulta──► eureka-server (8761)
-        │                              ▲
-        │  enruta por nombre           │ cada microservicio se registra al arrancar
-        ▼                              │
-ms-productos · ms-novedades · ms-contacto · ms-carrito · ms-usuarios · ms-registro · ms-blogs
-        │
-        ▼
-MySQL · base de datos sonidovivo
+React (5173)
+    |
+API Gateway (8080) <--> Eureka Server (8761)
+    |
+    +-- ms-productos (8081)
+    +-- ms-novedades (8082)
+    +-- ms-contacto  (8083)
+    +-- ms-carrito   (8084)
+    +-- ms-usuarios  (8085)
+    +-- ms-registro  (8086)
+    +-- ms-blogs     (8087)
+              |
+        MySQL (3306)
+          sonidovivo
 ```
 
-Cada carpeta es un proyecto Spring Boot independiente. Los microservicios se conectan a la misma base de datos MySQL, `sonidovivo`, y cada uno trabaja con sus propias tablas.
+El frontend consume las APIs mediante el Gateway.
+Eureka permite descubrir las instancias de los microservicios.
+Cada microservicio administra sus propias tablas.
 
-## Proyectos
+## Microservicios y responsables
 
-| Proyecto | Puerto | Ruta en el gateway | Métodos | Responsable |
-|---|---|---|---|---|
-| `eureka-server` | 8761 | — | — | Vicente |
-| `api-gateway` | 8080 | — | — | Vicente |
-| `ms-productos` | 8081 | `/api/productos/**` | GET, POST, PUT, DELETE | Vicente |
-| `ms-novedades` | 8082 | `/api/novedades/**` | GET, POST, PUT, DELETE | Vicente |
-| `ms-contacto` | 8083 | `/api/contactos/**` | GET, POST | Felipe |
-| `ms-carrito` | 8084 | `/api/carrito/**` | GET, POST, PUT, DELETE | Sebastián |
-| `ms-usuarios` | 8085 | `/api/usuarios/**` | GET, POST, PUT, DELETE | Felipe |
-| `ms-registro` | 8086 | `/api/auth/**` | POST | Sebastián |
-| `ms-blogs` | 8087 | `/api/blogs/**` | GET, POST, PUT, DELETE | Felipe |
-
-- Panel de Eureka: http://localhost:8761
-- Swagger de cada microservicio: `http://localhost:<puerto>/swagger-ui/index.html`
-- `ms-usuarios` y `ms-registro` usan la misma tabla `usuarios`: `ms-usuarios` la crea y la administra; `ms-registro` registra clientes e inicia sesión.
-
-## Tecnologías
-
-- Java 17 o superior
-- Spring Boot: Spring Web, Spring Data JPA, Validation
-- Spring Cloud: Eureka Server, Eureka Discovery Client, Gateway
-- MySQL
-- springdoc-openapi (Swagger)
-- BCrypt (`spring-security-crypto`) para cifrar contraseñas en `ms-usuarios` y `ms-registro`
-- Maven
-
-## Convenciones del equipo
-
-- Todos los proyectos se generan en start.spring.io con la **misma versión de Spring Boot**. Así Spring Cloud queda en una versión compatible en los nueve.
-- `spring.application.name` igual al nombre de la carpeta (por ejemplo `ms-usuarios`). El gateway usa ese nombre para enrutar.
-- Cada microservicio incluye **Eureka Discovery Client** y se registra en `http://localhost:8761/eureka`.
-- El frontend llama **solo al gateway** (`http://localhost:8080/api`). CORS se configura **solo en `api-gateway`**; si un microservicio también lo configura, el navegador rechaza la respuesta por cabeceras duplicadas.
-- Capas: `model`, `repository`, `service`, `controller`.
-- El JSON usa los mismos campos que los tipos del frontend (`Producto.ts`, `Usuario.ts`, `Articulo.ts`, `MensajeContacto.ts`).
-- Errores con el formato `{ "mensaje": "..." }` y códigos 400, 404 o 409.
-- Todos los endpoints quedan documentados en Swagger.
-- Las contraseñas se guardan cifradas con BCrypt y nunca se devuelven en las respuestas.
+| Proyecto | Puerto | Ruta | Responsable |
+|---|---|---|---|
+| eureka-server | 8761 | Panel Eureka | Vicente |
+| api-gateway | 8080 | /api | Vicente |
+| ms-productos | 8081 | /api/productos, /api/categorias | Vicente |
+| ms-novedades | 8082 | /api/novedades | Vicente |
+| ms-contacto | 8083 | /api/contactos | Felipe |
+| ms-carrito | 8084 | /api/carrito, /api/pedidos | Sebastián |
+| ms-usuarios | 8085 | /api/usuarios | Felipe |
+| ms-registro | 8086 | /api/auth | Sebastián |
+| ms-blogs | 8087 | /api/blogs | Felipe |
 
 ## Requisitos
 
-- JDK 17 o superior.
-- MySQL en ejecución en `localhost:3306`.
-- Maven, o el wrapper `mvnw` que trae cada proyecto.
+- JDK 21.
+- Git.
+- MySQL 8 en localhost:3306.
+- Node.js y npm para el frontend.
+- Visual Studio Code.
+- No es necesario instalar Maven globalmente.
 
-## Cómo ejecutar
+## Instalación
 
-Orden de arranque:
+Clonar el repositorio:
+
+```bash
+git clone https://github.com/velizntd/backend-tienda-sonido-vivoep3.git
+cd backend-tienda-sonido-vivoep3
+git switch evaluacion-3
+git pull origin evaluacion-3
+```
+
+## Configuración MySQL
+
+Ingresar a MySQL como administrador y ejecutar:
+
+```sql
+CREATE DATABASE IF NOT EXISTS sonidovivo
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+CREATE USER 'sonidovivo_app'@'localhost'
+IDENTIFIED BY 'REEMPLAZAR_PASSWORD';
+
+GRANT ALL PRIVILEGES ON sonidovivo.*
+TO 'sonidovivo_app'@'localhost';
+```
+
+Reemplazar REEMPLAZAR_PASSWORD por una contraseña local segura.
+
+No crear las tablas de negocio manualmente.
+Las migraciones se administran mediante Flyway.
+
+## Variables de entorno
+
+Desde PowerShell ejecutar:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\configurar-entorno.ps1
+```
+
+El script configura:
+
+- DB_PASSWORD: contraseña de MySQL.
+- JWT_SECRET: clave JWT local en Base64.
+
+Todos los servicios del mismo entorno deben utilizar la misma clave JWT.
+No subir credenciales a GitHub.
+
+## Ejecutar el backend
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\iniciar-backend.ps1
+```
+
+Orden de inicio:
 
 1. MySQL.
-2. `eureka-server`.
-3. Los microservicios (`ms-...`). Revisar en http://localhost:8761 que aparezcan registrados.
-4. `api-gateway`.
-5. El frontend: `npm run dev` dentro de `frontend/` del repositorio del frontend.
+2. Eureka Server.
+3. API Gateway.
+4. ms-usuarios.
+5. ms-registro.
+6. ms-productos.
+7. ms-carrito.
+8. ms-contacto.
+9. ms-novedades.
+10. ms-blogs.
 
-Para iniciar cada proyecto, entrar a su carpeta y ejecutar:
+También se puede iniciar cada servicio individualmente desde su carpeta:
 
-- Windows: `.\mvnw spring-boot:run`
-- Linux o macOS: `./mvnw spring-boot:run`
+```powershell
+.\mvnw.cmd spring-boot:run
+```
 
-## Ramas
+En cada terminal individual deben estar disponibles DB_PASSWORD
+y JWT_SECRET cuando corresponda.
 
-- `main`: versión entregada.
-- `evaluacion-3`: integración. Todos los Pull Request van dirigidos a esta rama.
-- `feature/<nombre>-<tarea>`: una rama por tarea, por ejemplo `feature/felipe-ms-usuarios-base`.
+## Verificar el backend
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\verificar-backend.ps1
+```
+
+Los nueve proyectos deben estar activos.
+Los siete microservicios REST deben responder HTTP 200 en OpenAPI.
+
+Panel Eureka:
+
+http://localhost:8761
+
+## Swagger
+
+| Microservicio | URL |
+|---|---|
+| Productos | http://localhost:8081/swagger-ui/index.html |
+| Novedades | http://localhost:8082/swagger-ui/index.html |
+| Contacto | http://localhost:8083/swagger-ui/index.html |
+| Carrito | http://localhost:8084/swagger-ui/index.html |
+| Usuarios | http://localhost:8085/swagger-ui/index.html |
+| Registro | http://localhost:8086/swagger-ui/index.html |
+| Blogs | http://localhost:8087/swagger-ui/index.html |
+
+Swagger mostrará las operaciones cuando se implementen los controladores.
+
+## Persistencia y Flyway
+
+Base de datos: sonidovivo.
+
+Cada servicio dispone de un historial de migraciones independiente.
+
+| Servicio | Historial Flyway | Tablas de negocio propuestas |
+|---|---|---|
+| Productos | flyway_productos | productos, categorias |
+| Novedades | flyway_novedades | novedades |
+| Contacto | flyway_contacto | contactos |
+| Carrito | flyway_carrito | carritos, detalle_carrito, pedidos, detalle_pedido |
+| Usuarios | flyway_usuarios | usuarios |
+| Registro | flyway_registro | refresh_tokens |
+| Blogs | flyway_blogs | blogs |
+
+Reglas:
+
+- Las migraciones se guardan en src/main/resources/db/migration.
+- Comenzar con V1__crear_tablas.sql.
+- Los cambios posteriores utilizan V2, V3, etc.
+- No modificar migraciones que ya se hayan aplicado.
+- Hibernate utiliza ddl-auto=validate.
+- No utilizar ddl-auto=create ni ddl-auto=update.
+- Solo ms-usuarios administra las migraciones de la tabla usuarios.
+- ms-registro debe respetar la estructura definida por ms-usuarios.
+
+## Seguridad JWT
+
+| Parámetro | Valor |
+|---|---|
+| Algoritmo | HS256 |
+| Secreto | JWT_SECRET |
+| Formato | Base64 |
+| Longitud mínima de clave | 32 bytes |
+| Emisor iss | sonidovivo |
+| Identificador sub | ID del usuario |
+| Claim de rol | rol |
+| Rol cliente | cliente |
+| Rol administrador | administrador |
+| Access token | 15 minutos |
+| Refresh token propuesto | 7 días |
+
+Las peticiones autenticadas deben incluir:
+
+Authorization: Bearer TOKEN
+
+Reglas de seguridad:
+
+- Las contraseñas se almacenan mediante hash BCrypt.
+- Las contraseñas nunca se devuelven en las respuestas.
+- El registro público solamente permite crear clientes.
+- Las operaciones administrativas requieren rol administrador.
+- Los clientes solamente pueden consultar y modificar sus propios recursos.
+- Gateway y microservicios validan los tokens.
+- Login y emisión de tokens corresponden a ms-registro.
+- Refresh y logout están pendientes de implementación segura.
+- Si se utilizan cookies para refresh, implementar protección CSRF.
+
+## Convenciones de desarrollo
+
+Estructura de cada microservicio:
+
+```text
+src/main/java/cl/tienda/nombreservicio/
+    config/
+    controller/
+    dto/
+    exception/
+    model/
+    repository/
+    service/
+```
+
+- Mantener los nombres y puertos establecidos.
+- Respetar los tipos y campos del frontend existente.
+- Usar codigo como identificador String de productos.
+- Usar id como identificador String de usuarios y pedidos.
+- Utilizar correo como campo de correo electrónico.
+- Validar los datos de entrada.
+- Utilizar DTO para proteger datos sensibles.
+- Documentar las operaciones mediante Swagger.
+- CORS se administra desde API Gateway.
+- Frontend utiliza http://localhost:8080/api.
+- Formato común propuesto para errores de negocio: {"mensaje":"Descripción"}.
+
+## Códigos HTTP
+
+- 200: operación exitosa.
+- 201: recurso creado.
+- 204: operación exitosa sin contenido.
+- 400: datos incorrectos.
+- 401: autenticación requerida.
+- 403: permisos insuficientes.
+- 404: recurso no encontrado.
+- 409: conflicto de datos.
+- 500: error interno.
+- 503: servicio no disponible.
+
+## Compilación y pruebas
+
+Desde la carpeta de cada microservicio:
+
+```powershell
+.\mvnw.cmd clean compile
+.\mvnw.cmd test
+.\mvnw.cmd clean package
+```
+
+Las pruebas de integración pueden requerir MySQL y las variables
+de entorno. Cada integrante debe implementar pruebas de sus
+funcionalidades.
+
+## Ramas Git
+
+- main: versión entregada.
+- evaluacion-3: integración del equipo.
+- chore/configuracion-base: preparación de infraestructura.
+- feature/vicente-productos
+- feature/sebastian-registro-carrito
+- feature/felipe-usuarios-contacto-blogs
+
+Todos los Pull Requests deben dirigirse a evaluacion-3.
+
+No trabajar directamente sobre main.
+
+## Estado de la infraestructura
+
+Validado el 24 de noviembre de 2026:
+
+- 9 de 9 proyectos iniciados correctamente.
+- 7 de 7 microservicios compilados.
+- 7 de 7 endpoints OpenAPI respondiendo HTTP 200.
+- 7 historiales Flyway creados.
+- 8 aplicaciones registradas en Eureka.
+- Seguridad base JWT configurada.
+- Acceso público y autenticación requerida comprobados en Gateway.
+- Scripts PowerShell sin errores de sintaxis.
+- Script de verificación ejecutado correctamente.
+
+## Funcionalidades pendientes
+
+- Entidades y migraciones de negocio.
+- Repositorios, servicios y controladores.
+- Operaciones CRUD.
+- Login y registro reales.
+- Generación y renovación de JWT.
+- Autorización por roles y propiedad de recursos.
+- Integración con React.
+- Pruebas unitarias y de integración.
+- Evidencias y documentación final.
 
 ## Equipo
 
-- Vicente: `eureka-server`, `api-gateway`, `ms-productos`, `ms-novedades`
-- Sebastián: `ms-carrito`, `ms-registro`
-- Felipe: `ms-usuarios`, `ms-contacto`, `ms-blogs`
+- Vicente: infraestructura, productos, categorías y novedades.
+- Sebastián: registro, autenticación, carrito y pedidos.
+- Felipe: usuarios, contacto y blogs.
+
+Cada integrante desarrolla y prueba sus funcionalidades
+en backend y frontend.

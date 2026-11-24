@@ -24,4 +24,13 @@ public interface PedidoRepository
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Pedido> findOneById(String id);
+
+    Optional<Pedido>
+            findFirstByUsuarioIdAndEstadoOrderByFechaDesc(
+                    String usuarioId,
+                    String estado);
+
+    boolean existsByUsuarioIdAndEstado(
+            String usuarioId,
+            String estado);
 }

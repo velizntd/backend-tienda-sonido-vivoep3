@@ -20,6 +20,7 @@ import cl.tienda.mscarrito.model.Carrito;
 import cl.tienda.mscarrito.model.DetalleCarrito;
 import cl.tienda.mscarrito.repository.CarritoRepository;
 import cl.tienda.mscarrito.repository.DetalleCarritoRepository;
+import cl.tienda.mscarrito.repository.PedidoRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +32,8 @@ public class CarritoService {
     private final DetalleCarritoRepository detalleRepository;
 
     private final ProductoClient productoClient;
+
+    private final PedidoRepository pedidoRepository;
 
     private static final int CANTIDAD_MAXIMA = 999;
 
@@ -47,6 +50,21 @@ public class CarritoService {
                 .orElseThrow(() -> new CarritoException(
                         HttpStatus.INTERNAL_SERVER_ERROR,
                         "No fue posible obtener el carrito"));
+    }
+
+    private void validarSinPedidoPendiente(
+            String usuarioId) {
+
+        if (pedidoRepository.existsByUsuarioIdAndEstado(
+                usuarioId,
+                "pendiente")) {
+
+            throw new CarritoException(
+                    HttpStatus.CONFLICT,
+                    "Existe un pedido pendiente. "
+                    + "Debes confirmar su resultado "
+                    + "antes de modificar el carrito");
+        }
     }
 
     public CarritoResponse obtenerCarrito(
@@ -66,6 +84,8 @@ public class CarritoService {
 
         Carrito carrito =
                 obtenerOCrearCarrito(usuarioId);
+
+        validarSinPedidoPendiente(usuarioId);
 
         validarCantidad(request.cantidad());
 
@@ -87,7 +107,10 @@ public class CarritoService {
                             UUID.randomUUID().toString());
 
                     nuevo.setCarrito(carrito);
-                    nuevo.setCodigoProducto(producto.codigo());
+
+                    nuevo.setCodigoProducto(
+                            producto.codigo());
+
                     nuevo.setCantidad(0);
 
                     return nuevo;
@@ -98,6 +121,7 @@ public class CarritoService {
                         + request.cantidad();
 
         validarCantidad(cantidadFinal);
+
         validarStock(producto, cantidadFinal);
 
         detalle.setCantidad(cantidadFinal);
@@ -118,6 +142,8 @@ public class CarritoService {
         Carrito carrito =
                 obtenerOCrearCarrito(usuarioId);
 
+        validarSinPedidoPendiente(usuarioId);
+
         validarCantidad(request.cantidad());
 
         DetalleCarrito detalle = detalleRepository
@@ -133,7 +159,9 @@ public class CarritoService {
                         codigo,
                         token);
 
-        validarStock(producto, request.cantidad());
+        validarStock(
+                producto,
+                request.cantidad());
 
         detalle.setCantidad(request.cantidad());
 
@@ -151,6 +179,8 @@ public class CarritoService {
 
         Carrito carrito =
                 obtenerOCrearCarrito(usuarioId);
+
+        validarSinPedidoPendiente(usuarioId);
 
         DetalleCarrito detalle = detalleRepository
                 .findByCarrito_IdAndCodigoProducto(
@@ -171,6 +201,8 @@ public class CarritoService {
 
         Carrito carrito =
                 obtenerOCrearCarrito(usuarioId);
+
+        validarSinPedidoPendiente(usuarioId);
 
         detalleRepository.deleteByCarrito_Id(
                 carrito.getId());
@@ -232,17 +264,21 @@ public class CarritoService {
 
             try {
 
-                producto = productoClient.obtenerProducto(
-                        detalle.getCodigoProducto(),
-                        token);
+                producto =
+                        productoClient.obtenerProducto(
+                                detalle.getCodigoProducto(),
+                                token);
 
             } catch (CarritoException ex) {
 
-                if (ex.getEstado() != HttpStatus.NOT_FOUND) {
+                if (ex.getEstado()
+                        != HttpStatus.NOT_FOUND) {
+
                     throw ex;
                 }
 
                 items.add(new ItemCarritoResponse(
+
                         detalle.getCodigoProducto(),
                         "Producto no disponible",
                         null,
@@ -250,7 +286,8 @@ public class CarritoService {
                         0,
                         BigDecimal.ZERO,
                         BigDecimal.ZERO,
-                        false));
+                        false
+                ));
 
                 cantidadTotal += detalle.getCantidad();
 
@@ -267,6 +304,7 @@ public class CarritoService {
                             >= detalle.getCantidad();
 
             items.add(new ItemCarritoResponse(
+
                     producto.codigo(),
                     producto.nombre(),
                     producto.imagen(),
@@ -274,7 +312,8 @@ public class CarritoService {
                     producto.stock(),
                     producto.precio(),
                     subtotal,
-                    disponible));
+                    disponible
+            ));
 
             total = total.add(subtotal);
 
@@ -282,10 +321,12 @@ public class CarritoService {
         }
 
         return new CarritoResponse(
+
                 carrito.getId(),
                 carrito.getUsuarioId(),
                 items,
                 cantidadTotal,
-                total);
+                total
+        );
     }
 }

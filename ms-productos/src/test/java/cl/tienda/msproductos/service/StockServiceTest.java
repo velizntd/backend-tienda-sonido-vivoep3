@@ -1,5 +1,6 @@
 package cl.tienda.msproductos.service;
 
+import cl.tienda.msproductos.exception.StockException;
 import cl.tienda.msproductos.dto.DescuentoStockDTO;
 import cl.tienda.msproductos.dto.RespuestaStockDTO;
 import cl.tienda.msproductos.dto.StockItemDTO;
@@ -39,6 +40,8 @@ class StockServiceTest {
     private Producto productoA;
     private Producto productoB;
     private DescuentoStock descuento;
+    private static final String PEDIDO_ID =
+        "550e8400-e29b-41d4-a716-446655440000";
 
     @BeforeEach
     void prepararDatos() {
@@ -52,14 +55,14 @@ class StockServiceTest {
         productoB.setStock(5);
 
         descuento = new DescuentoStock();
-        descuento.setPedidoId(125L);
+        descuento.setPedidoId(PEDIDO_ID);
         descuento.setProcesado(false);
     }
 
     private void prepararSolicitud() {
 
         when(descuentoStockRepository.registrarSolicitud(
-                eq(125L), anyString()))
+                eq(PEDIDO_ID), anyString()))
                 .thenAnswer(invocacion -> {
 
                     if (descuento.getHuellaSolicitud() == null) {
@@ -71,14 +74,14 @@ class StockServiceTest {
                     return 1;
                 });
 
-        when(descuentoStockRepository.buscarBloqueado(125L))
+        when(descuentoStockRepository.buscarBloqueado(PEDIDO_ID))
                 .thenReturn(Optional.of(descuento));
     }
 
     private DescuentoStockDTO solicitudNormal() {
 
         return new DescuentoStockDTO(
-                125L,
+                PEDIDO_ID,
                 List.of(
                         new StockItemDTO("GA001", 2),
                         new StockItemDTO("GA003", 1)
@@ -101,7 +104,7 @@ class StockServiceTest {
                 stockService.descontar(solicitudNormal());
 
         assertEquals("DESCONTADO", respuesta.getEstado());
-        assertEquals(125L, respuesta.getPedidoId());
+        assertEquals(PEDIDO_ID, respuesta.getPedidoId());
         assertEquals(8, productoA.getStock());
         assertEquals(4, productoB.getStock());
         assertTrue(descuento.getProcesado());
@@ -129,6 +132,10 @@ class StockServiceTest {
         );
 
         assertEquals(409, error.getStatusCode().value());
+        assertEquals(
+            "STOCK_INSUFICIENTE",
+            assertInstanceOf(StockException.class, error).getCodigo()
+        );
         assertEquals(10, productoA.getStock());
         assertEquals(0, productoB.getStock());
         assertFalse(descuento.getProcesado());
@@ -195,7 +202,7 @@ class StockServiceTest {
 
         DescuentoStockDTO modificada =
                 new DescuentoStockDTO(
-                        125L,
+                        PEDIDO_ID,
                         List.of(new StockItemDTO("GA001", 5))
                 );
 
@@ -205,6 +212,10 @@ class StockServiceTest {
         );
 
         assertEquals(409, error.getStatusCode().value());
+        assertEquals(
+            "CONFLICTO_IDEMPOTENCIA",
+            assertInstanceOf(StockException.class, error).getCodigo()
+        );
         assertEquals(8, productoA.getStock());
         assertEquals(4, productoB.getStock());
     }
@@ -219,7 +230,7 @@ class StockServiceTest {
 
         DescuentoStockDTO solicitud =
                 new DescuentoStockDTO(
-                        125L,
+                        PEDIDO_ID,
                         List.of(
                                 new StockItemDTO("GA001", 2),
                                 new StockItemDTO("GA001", 3)

@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 public class RespuestaStockDTO {
 
-    private Long pedidoId;
+    private String pedidoId;
 
     private String estado;
 }

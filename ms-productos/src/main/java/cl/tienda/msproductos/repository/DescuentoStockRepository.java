@@ -15,7 +15,7 @@ import java.util.Optional;
 
 @Repository
 public interface DescuentoStockRepository
-        extends JpaRepository<DescuentoStock, Long> {
+        extends JpaRepository<DescuentoStock, String> {
 
     @Modifying
     @Query(value = """
@@ -25,7 +25,7 @@ public interface DescuentoStockRepository
         ON DUPLICATE KEY UPDATE pedido_id = pedido_id
         """, nativeQuery = true)
     int registrarSolicitud(
-            @Param("pedidoId") Long pedidoId,
+            @Param("pedidoId") String pedidoId,
             @Param("huella") String huella);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -34,5 +34,5 @@ public interface DescuentoStockRepository
         WHERE d.pedidoId = :pedidoId
         """)
     Optional<DescuentoStock> buscarBloqueado(
-            @Param("pedidoId") Long pedidoId);
+            @Param("pedidoId") String pedidoId);
 }

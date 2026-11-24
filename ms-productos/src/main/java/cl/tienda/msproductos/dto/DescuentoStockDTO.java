@@ -12,9 +12,12 @@ import java.util.List;
 @AllArgsConstructor
 public class DescuentoStockDTO {
 
-    @NotNull(message = "El pedidoId es obligatorio")
-    @Positive
-    private Long pedidoId;
+    @NotBlank(message = "El pedidoId es obligatorio")
+    @Pattern(
+        regexp = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        message = "El pedidoId debe ser un UUID válido en minúsculas"
+    )
+    private String pedidoId;
 
     @NotEmpty(message = "El pedido debe contener productos")
     @Size(max = 100)

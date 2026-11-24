@@ -12,8 +12,8 @@ import lombok.*;
 public class DescuentoStock {
 
     @Id
-    @Column(name = "pedido_id")
-    private Long pedidoId;
+    @Column(name = "pedido_id", length = 36)
+    private String pedidoId;
 
     @Column(
         name = "huella_solicitud",

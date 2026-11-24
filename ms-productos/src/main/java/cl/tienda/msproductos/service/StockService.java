@@ -5,6 +5,7 @@ import cl.tienda.msproductos.dto.RespuestaStockDTO;
 import cl.tienda.msproductos.dto.StockItemDTO;
 import cl.tienda.msproductos.entity.DescuentoStock;
 import cl.tienda.msproductos.entity.Producto;
+import cl.tienda.msproductos.exception.StockException;
 import cl.tienda.msproductos.repository.DescuentoStockRepository;
 import cl.tienda.msproductos.repository.ProductoRepository;
 
@@ -49,14 +50,18 @@ public class StockService {
                         "No se pudo registrar el descuento"
                 ));
 
+        // Verificar que el pedido tenga los mismos datos.
         if (!huella.equals(descuento.getHuellaSolicitud())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
+
+            throw new StockException(
+                    "CONFLICTO_IDEMPOTENCIA",
                     "El pedido ya fue registrado con otros productos o cantidades"
             );
         }
 
+        // Evitar descuentos duplicados.
         if (Boolean.TRUE.equals(descuento.getProcesado())) {
+
             return new RespuestaStockDTO(
                     solicitud.getPedidoId(),
                     "DESCONTADO"
@@ -65,7 +70,7 @@ public class StockService {
 
         Map<String, Producto> productos = new LinkedHashMap<>();
 
-        // Primero bloqueamos y validamos todos los productos.
+        // Bloquear y validar todos los productos.
         for (Map.Entry<String, Integer> item : cantidades.entrySet()) {
 
             Producto producto = productoRepository
@@ -77,8 +82,8 @@ public class StockService {
 
             if (producto.getStock() < item.getValue()) {
 
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT,
+                throw new StockException(
+                        "STOCK_INSUFICIENTE",
                         "Stock insuficiente para: " + item.getKey()
                 );
             }
@@ -86,7 +91,7 @@ public class StockService {
             productos.put(item.getKey(), producto);
         }
 
-        // Solo descontamos si todos tienen stock suficiente.
+        // Descontar solamente si todos tienen stock suficiente.
         for (Map.Entry<String, Integer> item : cantidades.entrySet()) {
 
             Producto producto = productos.get(item.getKey());

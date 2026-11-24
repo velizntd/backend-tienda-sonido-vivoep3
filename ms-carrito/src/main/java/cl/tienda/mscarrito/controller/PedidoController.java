@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -37,6 +38,10 @@ public class PedidoController {
     private final PedidoService pedidoService;
 
     @PostMapping
+    @ApiResponse(responseCode = "201", description = "Pedido confirmado")
+    @ApiResponse(responseCode = "202", description = "Pedido persistido pendiente de confirmacion; reintentar con datos originales")
+    @ApiResponse(responseCode = "400", description = "Datos invalidos o carrito vacio")
+    @ApiResponse(responseCode = "409", description = "Stock insuficiente o datos distintos de un pedido pendiente")
 
     @Operation(
             summary = "Crear o recuperar un pedido pendiente"

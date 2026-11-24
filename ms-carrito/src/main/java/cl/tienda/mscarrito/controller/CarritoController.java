@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -70,6 +71,7 @@ public class CarritoController {
     }
 
     @DeleteMapping("/items/{codigo}")
+    @ApiResponse(responseCode = "200", description = "Producto eliminado; devuelve el carrito actualizado")
     @Operation(summary = "Eliminar producto del carrito")
     public ResponseEntity<CarritoResponse> eliminarProducto(
             @AuthenticationPrincipal Jwt jwt,
@@ -83,6 +85,7 @@ public class CarritoController {
     }
 
     @DeleteMapping
+    @ApiResponse(responseCode = "204", description = "Carrito vaciado; sin cuerpo de respuesta")
     @Operation(summary = "Vaciar carrito del cliente")
     public ResponseEntity<Void> vaciarCarrito(
             @AuthenticationPrincipal Jwt jwt) {

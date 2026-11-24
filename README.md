@@ -122,6 +122,24 @@ El script configura:
 
 Todos los servicios del mismo entorno deben utilizar la misma clave JWT.
 No subir credenciales a GitHub.
+## Administrador inicial
+
+Al iniciar, ms-usuarios crea un administrador si no existe ninguno activo. La contraseña se define en la variable ADMIN_PASSWORD (4 a 10 caracteres) y solo se necesita antes del primer arranque:
+
+```powershell
+$env:ADMIN_PASSWORD = "REEMPLAZAR_CLAVE"
+powershell -ExecutionPolicy Bypass -File .\scripts\iniciar-backend.ps1
+```
+
+| Dato | Valor |
+|---|---|
+| Correo | admin@sonidovivo.example |
+| Rol | administrador |
+| Contraseña | la definida en ADMIN_PASSWORD |
+
+Si la variable no está definida, ms-usuarios no crea la cuenta y lo avisa en su consola.
+
+ms-usuarios debe iniciar antes que ms-registro y ms-carrito, porque refresh_tokens, carritos y pedidos tienen claves foráneas hacia usuarios.
 
 ## Ejecutar el backend
 

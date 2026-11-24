@@ -1,0 +1,2 @@
+ALTER TABLE descuentos_stock
+MODIFY COLUMN pedido_id VARCHAR(36) NOT NULL;

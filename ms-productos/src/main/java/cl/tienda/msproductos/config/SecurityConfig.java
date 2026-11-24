@@ -1,5 +1,6 @@
 package cl.tienda.msproductos.config;
 
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import java.util.Base64;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -18,6 +19,8 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    @Value("${app.internal.service-key:}")
+private String claveInterna;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
@@ -35,12 +38,21 @@ public class SecurityConfig {
         converter.setJwtGrantedAuthoritiesConverter(roles);
 
         return http
+            .addFilterAfter(
+                new InternalServiceKeyFilter(claveInterna),
+                BearerTokenAuthenticationFilter.class
+            )
             .csrf(csrf -> csrf.disable())
             .httpBasic(basic -> basic.disable())
             .formLogin(form -> form.disable())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    HttpMethod.POST,
+                    "/api/productos/stock/descontar"
+                )
+                .hasRole("SERVICIO_INTERNO")
                 .requestMatchers("/swagger-ui/**",
                     "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.GET,

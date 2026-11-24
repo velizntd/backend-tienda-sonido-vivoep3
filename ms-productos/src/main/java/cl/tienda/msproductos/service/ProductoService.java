@@ -95,9 +95,9 @@ public class ProductoService {
         return convertirDTO(productoRepository.save(producto));
     }
 
-    public ProductoDTO actualizar(String codigo, ProductoDTO dto) {
+   public ProductoDTO actualizar(String codigo, ProductoDTO dto) {
 
-        Producto producto = buscarEntidad(codigo);
+    Producto producto = buscarEntidadBloqueada(codigo);
 
         if (!codigo.equals(dto.getCodigo())) {
             throw new ResponseStatusException(
@@ -112,8 +112,8 @@ public class ProductoService {
     }
 
     public void eliminar(String codigo) {
-        Producto producto = buscarEntidad(codigo);
-        productoRepository.delete(producto);
+    Producto producto = buscarEntidadBloqueada(codigo);
+    productoRepository.delete(producto);
     }
 
     private Producto buscarEntidad(String codigo) {
@@ -123,6 +123,13 @@ public class ProductoService {
                         "Producto no encontrado"
                 ));
     }
+    private Producto buscarEntidadBloqueada(String codigo) {
+    return productoRepository.buscarParaActualizar(codigo)
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Producto no encontrado"
+            ));
+}
 
     private void asignarDatos(Producto producto, ProductoDTO dto) {
 

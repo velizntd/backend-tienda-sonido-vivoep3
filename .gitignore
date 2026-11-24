@@ -23,3 +23,19 @@ Thumbs.db
 # Logs y variables locales
 *.log
 .env
+
+# Configuraciones privadas
+.env.*
+!.env.example
+application-local.properties
+application-local.yml
+application-local.yaml
+secrets.properties
+
+# Frontend
+node_modules/
+dist/
+
+# Archivos temporales
+*.tmp
+*.bak

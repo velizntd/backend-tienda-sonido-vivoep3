@@ -171,7 +171,7 @@ class ProductoServiceTest {
         dto.setStock(20);
         dto.setPrecio(new BigDecimal("14990"));
 
-        when(productoRepository.findById("TEST001"))
+        when(productoRepository.buscarParaActualizar("TEST001"))
                 .thenReturn(Optional.of(producto));
 
         when(categoriaRepository.findByNombreIgnoreCase("Accesorios"))
@@ -190,7 +190,7 @@ class ProductoServiceTest {
     @Test
     void eliminarProducto() {
 
-        when(productoRepository.findById("TEST001"))
+        when(productoRepository.buscarParaActualizar("TEST001"))
                 .thenReturn(Optional.of(producto));
 
         productoService.eliminar("TEST001");

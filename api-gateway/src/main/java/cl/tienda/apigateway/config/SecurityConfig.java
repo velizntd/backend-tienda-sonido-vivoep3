@@ -47,6 +47,9 @@ public class SecurityConfig {
                         NoOpServerSecurityContextRepository.getInstance())
                 .authorizeExchange(auth -> auth
 
+                        .pathMatchers("/api/productos/stock/**")
+                        .denyAll()
+
                         .pathMatchers(HttpMethod.OPTIONS, "/**")
                         .permitAll()
 

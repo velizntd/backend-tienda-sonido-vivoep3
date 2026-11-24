@@ -61,7 +61,10 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.GET,
                                 "/api/productos/**",
                                 "/api/categorias/**",
-                                "/api/novedades/**",
+                                "/api/novedades/**")
+                        .hasAnyRole("cliente", "vendedor", "administrador")
+
+                        .pathMatchers(HttpMethod.GET,
                                 "/api/blogs/**")
                         .permitAll()
 
